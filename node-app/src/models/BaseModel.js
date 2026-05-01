@@ -1,31 +1,16 @@
-import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import db from '../config/db.js';
 
 export default class BaseModel {
   constructor() {
-    this.connection = null;
     this.tableName = '';
   }
 
   /**
-   * Create database connection
+   * Get database connection
    * @returns {Promise<Object>} Database connection
    */
-  async connect() {
-    if (!this.connection) {
-      this.connection = await mysql.createConnection({
-        host: process.env.DB_HOST || 'localhost',
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || 'test_db',
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0
-      });
-    }
-    return this.connection;
+  async getConnection() {
+    return await db.getConnection();
   }
 
   /**
@@ -45,12 +30,17 @@ export default class BaseModel {
    * @returns {Promise<Array>} Query results
    */
   async query(sql, params = []) {
+    let connection;
     try {
-      const connection = await this.connect();
+      connection = await this.getConnection();
       const [rows] = await connection.execute(sql, params);
       return rows;
     } catch (error) {
       throw new Error(`Database query failed: ${error.message}`);
+    } finally {
+      if (connection) {
+        connection.release();
+      }
     }
   }
 

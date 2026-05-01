@@ -53,19 +53,18 @@ export default class UserController extends BaseController {
       const { id } = req.params;
       const { name, email, password } = req.body;
 
-      // Check if user exists
-      const existingUser = await this.userModel.getById(id);
-      if (!existingUser) {
+      const user = await this.userModel.getById(id);
+      if (!user) {
         return this.sendNotFound(res, 'User not found');
       }
 
-      const user = await this.userModel.update(id, {
-        name,
-        email,
-        password,
-      });
+      const updateData = {};
+      if (name !== undefined) updateData.name = name;
+      if (email !== undefined) updateData.email = email;
+      if (password !== undefined) updateData.password = password;
 
-      this.sendSuccess(res, user, 'User updated successfully');
+      const updatedUser = await this.userModel.update(id, updateData);
+      this.sendSuccess(res, updatedUser, 'User updated successfully');
     } catch (err) {
       this.sendError(res, 'Failed to update user', 500, err);
     }
@@ -75,9 +74,8 @@ export default class UserController extends BaseController {
     try {
       const { id } = req.params;
 
-      // Check if user exists
-      const existingUser = await this.userModel.getById(id);
-      if (!existingUser) {
+      const user = await this.userModel.getById(id);
+      if (!user) {
         return this.sendNotFound(res, 'User not found');
       }
 
