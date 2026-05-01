@@ -18,6 +18,7 @@ export default class UserModel {
     );
     return { id: result.insertId, name, email };
   }
+  
 
   static async update(id, { name, email, password }) {
     await db.query(

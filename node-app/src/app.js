@@ -9,11 +9,11 @@ app.use(express.json());
 
 // Routes
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Wellcom node.js!');
 });
 
 app.get('/about', (req, res) => {
-  res.send('About page node.js');
+  res.send('About page node.js I love node.js');
 });
 
 // API routes

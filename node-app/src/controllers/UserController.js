@@ -1,69 +1,94 @@
-import UserModel from '../models/UserModel.js';
+import BaseModel from '../models/BaseModel.js';
+import BaseController from './BaseController.js';
 
-export default class UserController {
-  static async getUsers(req, res) {
+class UserModel extends BaseModel {
+  constructor() {
+    super();
+    this.tableName = 'users';
+  }
+}
+
+export default class UserController extends BaseController {
+  constructor() {
+    super();
+    this.userModel = new UserModel();
+  }
+
+  async getUsers(req, res) {
     try {
       const { id } = req.query;
 
       if (id) {
-        const user = await UserModel.getById(id);
-        return res.json(user);
+        const user = await this.userModel.getById(id);
+        if (!user) {
+          return this.sendNotFound(res, 'User not found');
+        }
+        return this.sendSuccess(res, user, 'User retrieved successfully');
       }
 
-      const users = await UserModel.getAll();
-      res.json(users);
+      const users = await this.userModel.getAll();
+      this.sendSuccess(res, users, 'Users retrieved successfully');
     } catch (err) {
-      res.status(500).json({ message: err.message });
+      this.sendError(res, 'Failed to retrieve users', 500, err);
     }
   }
 
-  static async createUser(req, res) {
+  async createUser(req, res) {
     try {
       const { name, email, password } = req.body;
 
       if (!name || !email || !password) {
-        return res.status(400).json({
-          message: 'Name, email and password are required',
-        });
+        return this.sendValidationError(res, 'Name, email and password are required');
       }
 
-      const user = await UserModel.create({ name, email, password });
-
-      res.status(201).json({
-        message: 'User created successfully',
-        user,
-      });
+      const user = await this.userModel.create({ name, email, password });
+      this.sendCreated(res, user, 'User created successfully');
     } catch (err) {
-      res.status(500).json({ message: err.message });
+      this.sendError(res, 'Failed to create user', 500, err);
     }
   }
 
-  static async updateUser(req, res) {
+  async updateUser(req, res) {
     try {
       const { id } = req.params;
       const { name, email, password } = req.body;
 
-      const user = await UserModel.update(id, {
+      // Check if user exists
+      const existingUser = await this.userModel.getById(id);
+      if (!existingUser) {
+        return this.sendNotFound(res, 'User not found');
+      }
+
+      const user = await this.userModel.update(id, {
         name,
         email,
         password,
       });
 
-      res.json({ message: 'User updated', user });
+      this.sendSuccess(res, user, 'User updated successfully');
     } catch (err) {
-      res.status(500).json({ message: err.message });
+      this.sendError(res, 'Failed to update user', 500, err);
     }
   }
 
-  static async deleteUser(req, res) {
+  async deleteUser(req, res) {
     try {
       const { id } = req.params;
 
-      await UserModel.delete(id);
+      // Check if user exists
+      const existingUser = await this.userModel.getById(id);
+      if (!existingUser) {
+        return this.sendNotFound(res, 'User not found');
+      }
 
-      res.json({ message: `User ${id} deleted` });
+      const deleted = await this.userModel.delete(id);
+      if (deleted) {
+        this.sendSuccess(res, null, `User ${id} deleted successfully`);
+      } else {
+        this.sendError(res, 'Failed to delete user', 500);
+      }
     } catch (err) {
-      res.status(500).json({ message: err.message });
+      this.sendError(res, 'Failed to delete user', 500, err);
     }
   }
 }
